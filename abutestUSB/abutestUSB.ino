@@ -110,10 +110,10 @@ void handleCommand(char cmd) {
   } else if (cmd == 'u') {
     digitalWrite(linear_UP, LOW);
     return;
-  } else if (cmd == 'D') {
+  } else if (cmd == 'O') {
     digitalWrite(linear_DOWN, HIGH);
     return;
-  } else if (cmd == 'd') {
+  } else if (cmd == 'o') {
     digitalWrite(linear_DOWN, LOW);
     return;
   }
