@@ -119,8 +119,8 @@ class TCPSerialBridge:
             'm': 'เปิด/ปิดชุดยิง',
             'U': 'Linear UP ON',
             'u': 'Linear UP OFF',
-            'D': 'Linear DOWN ON',
-            'd': 'Linear DOWN OFF',
+            'O': 'Linear DOWN ON',
+            'o': 'Linear DOWN OFF',
             'f': 'ฟังก์ชันพิเศษ'
         }
         return commands.get(char, 'ไม่รู้จักคำสั่ง')
