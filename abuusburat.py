@@ -175,14 +175,6 @@ class SimpleKeyboardClient:
             self.send_command("o")
             self.down_arrow_pressed = False
 
-        # ปุ่ม j (ยกที่รับบอล)
-        if keyboard.is_pressed("j") and not self.j_was_pressed:
-            self.send_command("J")  # ยกที่รับบอลขึ้น
-            self.j_was_pressed = True
-        elif self.j_was_pressed and not keyboard.is_pressed("j"):
-            self.send_command("j")  # หยุดยก
-            self.j_was_pressed = False
-
         # ปุ่ม l (เอาที่รับบอลลง)
         if keyboard.is_pressed("l") and not self.l_was_pressed:
             self.send_command("L")  # เอาลง
