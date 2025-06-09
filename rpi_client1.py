@@ -123,6 +123,8 @@ class TCPSerialBridge:
             "O": "Linear DOWN ON",
             "o": "Linear DOWN OFF",
             "f": "ฟังก์ชันพิเศษ",
+            "j": "ยกที่รับบอลขึ้น",
+            "l": "เอาที่รับบอลลง",
         }
         return commands.get(char, "ไม่รู้จักคำสั่ง")
 
