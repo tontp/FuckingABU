@@ -18,6 +18,8 @@ class SimpleKeyboardClient:
         self.f_was_pressed = False
         self.up_arrow_pressed = False
         self.down_arrow_pressed = False
+        self.j_was_pressed = False
+        self.l_was_pressed = False
 
         # สถิติ
         self.stats = {
@@ -64,6 +66,8 @@ class SimpleKeyboardClient:
         print("   F = ฟังก์ชันพิเศษ")
         print("\n❌ หยุดโปรแกรม: Ctrl+C")
         print("=" * 60 + "\n")
+        print(" 🛡j: ยกที่รับบอลขึ้น \n")
+        print("  🛡l: เอาที่รับบอลลง")
 
     def get_key(self):
         """ตรวจสอบปุ่มที่กดและส่งคืนคำสั่ง"""
@@ -122,6 +126,8 @@ class SimpleKeyboardClient:
             "O": "Linear DOWN ON",
             "o": "Linear DOWN OFF",
             "f": "ฟังก์ชันพิเศษ",
+            "j": "ยกที่รับบอลขึ้น",
+            "l": "เอาที่รับบอลลง",
         }
         return commands.get(char, "ไม่รู้จัก")
 
@@ -174,6 +180,14 @@ class SimpleKeyboardClient:
         elif self.down_arrow_pressed and not keyboard.is_pressed("down"):
             self.send_command("o")
             self.down_arrow_pressed = False
+
+        # ปุ่ม j (ยกที่รับบอล)
+        if keyboard.is_pressed("j") and not self.j_was_pressed:
+            self.send_command("J")  # ยกที่รับบอลขึ้น
+            self.j_was_pressed = True
+        elif self.j_was_pressed and not keyboard.is_pressed("j"):
+            self.send_command("j")  # หยุดยก
+            self.j_was_pressed = False
 
         # ปุ่ม l (เอาที่รับบอลลง)
         if keyboard.is_pressed("l") and not self.l_was_pressed:
