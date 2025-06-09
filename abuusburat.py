@@ -18,8 +18,6 @@ class SimpleKeyboardClient:
         self.f_was_pressed = False
         self.up_arrow_pressed = False
         self.down_arrow_pressed = False
-        self.j_was_pressed = False
-        self.l_was_pressed = False
 
         # สถิติ
         self.stats = {
@@ -124,8 +122,6 @@ class SimpleKeyboardClient:
             "O": "Linear DOWN ON",
             "o": "Linear DOWN OFF",
             "f": "ฟังก์ชันพิเศษ",
-            "j": "ยกที่รับบอลขึ้น",
-            "l": "เอาที่รับบอลลง",
         }
         return commands.get(char, "ไม่รู้จัก")
 
