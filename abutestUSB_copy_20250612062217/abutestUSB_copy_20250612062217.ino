@@ -62,6 +62,8 @@ void stopAllMotors() {
   for (int i = 0; i < 4; i++) {
     digitalWrite(motorDIRPins[i], LOW);
     ledcWrite(i, 0);
+    digitalWrite(linear_DOWN, LOW);
+    digitalWrite(linear_UP, LOW);
   }
 }
 
@@ -93,14 +95,13 @@ void handleCommand(char cmd) {
   }
 
   if (cmd == 'U') {
-  digitalWrite(linear_UP, HIGH);
-  digitalWrite(linear_DOWN, LOW);
-  
-} else if (cmd == 'O') {
-  digitalWrite(linear_DOWN, HIGH);
-  digitalWrite(linear_UP, LOW);
-  
-}
+    digitalWrite(linear_UP, HIGH);
+    digitalWrite(linear_DOWN, LOW);
+
+  } else if (cmd == 'O') {
+    digitalWrite(linear_DOWN, HIGH);
+    digitalWrite(linear_UP, LOW);
+  }
 
   // ยิงชุดยิงแบบกำหนดระดับตรง (0-3)
   if (cmd >= '0' && cmd <= '3') {
@@ -133,16 +134,58 @@ void handleCommand(char cmd) {
   }
 
   switch (cmd) {
-    case 'w': m[1] = speed; m[3] = -speed; break;
-    case 's': m[1] = -speed; m[3] = speed; break;
-    case 'a': m[0] = speed; m[2] = -speed; break;
-    case 'd': m[0] = -speed; m[2] = speed; break;
-    case 'q': m[0] = turn; m[1] = turn; m[2] = turn; m[3] = turn; break;
-    case 'e': m[0] = -turn; m[1] = -turn; m[2] = -turn; m[3] = -turn; break;
-    case '7': m[0] = -speed; m[1] = speed; m[2] = speed; m[3] = -speed; break;
-    case '6': m[0] = speed; m[1] = speed; m[2] = -speed; m[3] = -speed; break;
-    case '8': m[0] = speed; m[1] = -speed; m[2] = -speed; m[3] = speed; break;
-    case '9': m[0] = -speed; m[1] = -speed; m[2] = speed; m[3] = speed; break;
+    case 'w':
+      m[1] = speed;
+      m[3] = -speed;
+      break;
+    case 's':
+      m[1] = -speed;
+      m[3] = speed;
+      break;
+    case 'a':
+      m[0] = speed;
+      m[2] = -speed;
+      break;
+    case 'd':
+      m[0] = -speed;
+      m[2] = speed;
+      break;
+    case 'q':
+      m[0] = turn;
+      m[1] = turn;
+      m[2] = turn;
+      m[3] = turn;
+      break;
+    case 'e':
+      m[0] = -turn;
+      m[1] = -turn;
+      m[2] = -turn;
+      m[3] = -turn;
+      break;
+    case '7':
+      m[0] = -speed;
+      m[1] = speed;
+      m[2] = speed;
+      m[3] = -speed;
+      break;
+    case '6':
+      m[0] = speed;
+      m[1] = speed;
+      m[2] = -speed;
+      m[3] = -speed;
+      break;
+    case '8':
+      m[0] = speed;
+      m[1] = -speed;
+      m[2] = -speed;
+      m[3] = speed;
+      break;
+    case '9':
+      m[0] = -speed;
+      m[1] = -speed;
+      m[2] = speed;
+      m[3] = speed;
+      break;
     default: stopAllMotors(); return;
   }
 

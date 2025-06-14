@@ -11,8 +11,16 @@ class PS5ControllerClient:
         self.connected = False
         self.last_cmd = None
         self.shoot_level = 0
-        self.last_l2_state = False  # สำหรับเช็คว่ากด L2 แค่ครั้งเดียว
-        self.square_state = False   # สถานะสลับของปุ่มสี่เหลี่ยม
+        self.last_l2_state = False
+
+        # toggle state ต่าง ๆ
+        self.square_state = False
+        self.cross_last_state = False
+        self.receive_toggle_state = False
+        self.triangle_last_state = False
+        self.lift_toggle_state = False
+        self.last_r1_state = False
+        self.last_r2_state = False
 
         self.stats = {
             'start_time': datetime.now(),
@@ -20,13 +28,12 @@ class PS5ControllerClient:
             'connection_count': 0
         }
 
-        # เริ่มต้นจอยด้วย pydualsense
         self.dualsense = pydualsense()
         self.dualsense.init()
         if not self.dualsense.connected:
             print("❌ ไม่พบจอย PS5")
             exit()
-        self.dualsense.light.setColorI(0,0,255)  # ตั้งสีฟ้าเริ่มต้น
+        self.dualsense.light.setColorI(0, 0, 255)  # ฟ้า
 
     def connect_to_server(self):
         try:
@@ -35,7 +42,7 @@ class PS5ControllerClient:
             self.sock.connect((self.host, self.port))
             self.connected = True
             self.stats['connection_count'] += 1
-            print("✅ เชื่อมต่อสำเร็จ! 🎮 พร้อมควบคุม")
+            print("✅ เชื่อมต่อสำเร็จ!")
             return True
         except Exception as e:
             print(f"❌ ไม่สามารถเชื่อมต่อได้: {e}")
@@ -43,13 +50,13 @@ class PS5ControllerClient:
 
     def set_lightbar_color(self, level):
         if level == 0:
-            self.dualsense.light.setColorI(0, 0, 255)     # ฟ้า
+            self.dualsense.light.setColorI(0, 0, 255)
         elif level == 1:
-            self.dualsense.light.setColorI(0, 255, 0)     # เขียว
+            self.dualsense.light.setColorI(0, 255, 0)
         elif level == 2:
-            self.dualsense.light.setColorI(255, 165, 0)   # ส้ม
+            self.dualsense.light.setColorI(255, 165, 0)
         elif level == 3:
-            self.dualsense.light.setColorI(255, 0, 0)     # แดง
+            self.dualsense.light.setColorI(255, 0, 0)
 
     def get_command_from_controller(self):
         s = self.dualsense.state
@@ -57,7 +64,7 @@ class PS5ControllerClient:
         rx, ry = s.RX, s.RY
         threshold = 20
 
-        # สติ๊กซ้ายควบคุมทิศทาง (ตัวอย่าง)
+        # การควบคุมด้วยสติ๊ก
         if ly < -30 - threshold:
             if lx < -30 - threshold:
                 return '6'
@@ -80,39 +87,68 @@ class PS5ControllerClient:
             return 'q'
         elif rx > 30 + threshold:
             return 'e'
+        # D-pad (สำรอง)
+        if getattr(s, 'DpadUp', False): return 'w'
+        if getattr(s, 'DpadRight', False): return 'd'
+        if getattr(s, 'DpadDown', False): return 's'
+        if getattr(s, 'DpadLeft', False): return 'a'
+        
+        # ปุ่มสามเหลี่ยม: toggle k/l รอก
+        if s.triangle:
+            if not self.triangle_last_state:
+                self.lift_toggle_state = not self.lift_toggle_state
+                self.triangle_last_state = True
+                return 'l' if self.lift_toggle_state else 'k'
+        else:
+            self.triangle_last_state = False
 
-        # ปุ่มอื่นๆ
-        if s.triangle:   # กดสามเหลี่ยม -> ยกขึ้น
-            return 'k'
-        if s.cross:      # กด x -> ยกลง
-            return 'l'
+        # ปุ่มวงกลม: เดาะบาส
         if s.circle:
             return 'b'
+
+        # ปุ่ม L1: ยิงลูกบาส
         if s.L1:
             return ' '
-        
-        # ปุ่มสี่เหลี่ยม กดครั้งแรกส่ง 'M' ครั้งที่สองส่ง 'm' สลับกัน
+
+        # ปุ่มสี่เหลี่ยม: toggle M/m (ลิ้นชัก)
         if s.square:
             if not getattr(self, 'square_last_state', False):
                 self.square_state = not self.square_state
                 self.square_last_state = True
-                if self.square_state:
-                    return 'M'  # HIGH
-                else:
-                    return 'm'  # LOW
+                return 'M' if self.square_state else 'm'
         else:
             self.square_last_state = False
 
+        # ปุ่มกากบาท: toggle รับลูกบอล N/n
+        if s.cross:
+            if not self.cross_last_state:
+                self.receive_toggle_state = not self.receive_toggle_state
+                self.cross_last_state = True
+                return 'N' if self.receive_toggle_state else 'n'
+        else:
+            self.cross_last_state = False
+
+        # Touchpad: สลับทิศทางการเดิน
         if s.touchBtn:
             return 'f'
 
-        # R1 และ R2 ควบคุม linear_UP / linear_DOWN
+        # R1: linerup
         if s.R1:
+            self.last_r1_state = True
             return 'U'
-        if s.R2:
-            return 'O'
+        elif self.last_r1_state:
+            self.last_r1_state = False
+            return 'x'
 
-        # ปรับระดับมอเตอร์ด้วย L2 (กดทีละครั้ง)
+        # R2: linerdowe
+        if s.R2:
+            self.last_r2_state = True
+            return 'O'
+        elif self.last_r2_state:
+            self.last_r2_state = False
+            return 'x'
+
+        # L2: เปลี่ยนระดับพลังยิง (0–3)
         if s.L2Btn and not self.last_l2_state:
             self.shoot_level = (self.shoot_level + 1) % 4
             self.set_lightbar_color(self.shoot_level)
@@ -121,25 +157,7 @@ class PS5ControllerClient:
         elif not s.L2Btn:
             self.last_l2_state = False
 
-        # D-pad (สำรอง)
-        if getattr(s, 'DpadUp', False):
-            return 'w'
-        if getattr(s, 'DpadRight', False):
-            return 'd'
-        if getattr(s, 'DpadDown', False):
-            return 's'
-        if getattr(s, 'DpadLeft', False):
-            return 'a'
-        if getattr(s, 'DpadUp', False) and getattr(s, 'DpadRight', False):
-            return '6'
-        if getattr(s, 'DpadUp', False) and getattr(s, 'DpadLeft', False):
-            return '7'
-        if getattr(s, 'DpadDown', False) and getattr(s, 'DpadRight', False):
-            return '8'
-        if getattr(s, 'DpadDown', False) and getattr(s, 'DpadLeft', False):
-            return '9'
-
-        return 'x'  # ไม่กดอะไรเลย
+        return 'x'  # ไม่มีคำสั่งใหม่
 
     def send_command(self, command):
         if not self.connected:
@@ -155,7 +173,7 @@ class PS5ControllerClient:
             return False
 
     def control_loop(self):
-        print("🎮 เริ่มควบคุมด้วยจอย PS5 (กด Ctrl+C เพื่อหยุด)")
+        print("🎮 เริ่มควบคุมด้วยจอย PS5 (Ctrl+C เพื่อหยุด)")
         try:
             while self.connected:
                 cmd = self.get_command_from_controller()

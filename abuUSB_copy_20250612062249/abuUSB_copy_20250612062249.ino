@@ -123,6 +123,14 @@ void handleCommand(char cmd) {
       digitalWrite(Cylinder_drawer, LOW);
       break;
 
+    case 'N':
+      digitalWrite(Cylinder_Receive, HIGH);
+      break;
+
+    case 'n':
+      digitalWrite(Cylinder_Receive, LOW);
+      break;
+
     default:
       Serial.println("คำสั่งไม่รู้จัก");
       break;
