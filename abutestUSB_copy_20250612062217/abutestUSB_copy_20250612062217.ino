@@ -62,8 +62,6 @@ void stopAllMotors() {
   for (int i = 0; i < 4; i++) {
     digitalWrite(motorDIRPins[i], LOW);
     ledcWrite(i, 0);
-    digitalWrite(linear_DOWN, LOW);
-    digitalWrite(linear_UP, LOW);
   }
 }
 
@@ -130,6 +128,8 @@ void handleCommand(char cmd) {
 
   if (cmd == 'x') {
     stopAllMotors();
+    digitalWrite(linear_DOWN, LOW);
+    digitalWrite(linear_UP, LOW);
     return;
   }
 

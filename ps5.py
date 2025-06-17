@@ -13,7 +13,6 @@ class PS5ControllerClient:
         self.shoot_level = 0
         self.last_l2_state = False
 
-        # toggle state ต่าง ๆ
         self.square_state = False
         self.cross_last_state = False
         self.receive_toggle_state = False
@@ -64,7 +63,6 @@ class PS5ControllerClient:
         rx, ry = s.RX, s.RY
         threshold = 20
 
-        # การควบคุมด้วยสติ๊ก
         if ly < -30 - threshold:
             if lx < -30 - threshold:
                 return '6'
@@ -87,30 +85,27 @@ class PS5ControllerClient:
             return 'q'
         elif rx > 30 + threshold:
             return 'e'
-        # D-pad (สำรอง)
+
         if getattr(s, 'DpadUp', False): return 'w'
         if getattr(s, 'DpadRight', False): return 'd'
         if getattr(s, 'DpadDown', False): return 's'
         if getattr(s, 'DpadLeft', False): return 'a'
-        
-        # ปุ่มสามเหลี่ยม: toggle k/l รอก
+
+        # toggle lift (k/l) – ป้องกันสั่งซ้ำ
         if s.triangle:
-            if not self.triangle_last_state:
+            if not self.triangle_last_state and self.last_cmd not in ['k', 'l']:
                 self.lift_toggle_state = not self.lift_toggle_state
                 self.triangle_last_state = True
-                return 'l' if self.lift_toggle_state else 'k'
+                return 'k' if self.lift_toggle_state else 'l'
         else:
             self.triangle_last_state = False
 
-        # ปุ่มวงกลม: เดาะบาส
         if s.circle:
             return 'b'
 
-        # ปุ่ม L1: ยิงลูกบาส
         if s.L1:
             return ' '
 
-        # ปุ่มสี่เหลี่ยม: toggle M/m (ลิ้นชัก)
         if s.square:
             if not getattr(self, 'square_last_state', False):
                 self.square_state = not self.square_state
@@ -119,7 +114,6 @@ class PS5ControllerClient:
         else:
             self.square_last_state = False
 
-        # ปุ่มกากบาท: toggle รับลูกบอล N/n
         if s.cross:
             if not self.cross_last_state:
                 self.receive_toggle_state = not self.receive_toggle_state
@@ -128,11 +122,9 @@ class PS5ControllerClient:
         else:
             self.cross_last_state = False
 
-        # Touchpad: สลับทิศทางการเดิน
         if s.touchBtn:
             return 'f'
 
-        # R1: linerup
         if s.R1:
             self.last_r1_state = True
             return 'U'
@@ -140,7 +132,6 @@ class PS5ControllerClient:
             self.last_r1_state = False
             return 'x'
 
-        # R2: linerdowe
         if s.R2:
             self.last_r2_state = True
             return 'O'
@@ -148,7 +139,6 @@ class PS5ControllerClient:
             self.last_r2_state = False
             return 'x'
 
-        # L2: เปลี่ยนระดับพลังยิง (0–3)
         if s.L2Btn and not self.last_l2_state:
             self.shoot_level = (self.shoot_level + 1) % 4
             self.set_lightbar_color(self.shoot_level)
@@ -157,7 +147,7 @@ class PS5ControllerClient:
         elif not s.L2Btn:
             self.last_l2_state = False
 
-        return 'x'  # ไม่มีคำสั่งใหม่
+        return 'x'
 
     def send_command(self, command):
         if not self.connected:
