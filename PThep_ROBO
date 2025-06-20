@@ -1,1 +1,150 @@
+from pydualsense import pydualsense
+import socket
+import time
+import threading
+
+class PS5ControllerClient:
+    def __init__(self, host="192.168.0.110", port=8888):
+        self.host = host
+        self.port = port
+        self.sock = None
+        self.connected = False
+        self.speed_level = 1
+        self.last_options_state = False
+        self.last_cmd = "x"
+        self.current_cmd = "x"
+        self.cmd_lock = threading.Lock()
+        self.running = True
+
+        self.dualsense = pydualsense()
+        self.dualsense.init()
+        if not self.dualsense.connected:
+            print("❌ ไม่พบจอย PS5")
+            exit()
+        self.set_led_color()
+
+    def set_led_color(self):
+        color = (0, 255, 0) if self.speed_level == 1 else (255, 0, 0)
+        self.dualsense.light.setColorI(*color)
+
+    def toggle_speed(self):
+        self.speed_level = 2 if self.speed_level == 1 else 1
+        self.set_led_color()
+        print(f"⚙️ เปลี่ยนความเร็วเป็นระดับ {self.speed_level}")
+
+    def connect_to_server(self):
+        try:
+            print(f"🔌 เชื่อมต่อไปยัง {self.host}:{self.port}...")
+            self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+            self.sock.connect((self.host, self.port))
+            self.connected = True
+            print("✅ เชื่อมต่อสำเร็จ!")
+            return True
+        except Exception as e:
+            print(f"❌ ไม่สามารถเชื่อมต่อได้: {e}")
+            return False
+
+    def read_controller_loop(self):
+        threshold = 50
+        prev_cmd = ""
+
+        while self.running:
+            s = self.dualsense.state
+
+            # toggle speed ด้วยปุ่ม options
+            if s.options and not self.last_options_state:
+                self.toggle_speed()
+                self.last_options_state = True
+            elif not s.options:
+                self.last_options_state = False
+
+            # ตรวจจับ joystick ซ้าย
+            stick_cmds = []
+            if s.LY < -threshold: stick_cmds.append("w")
+            elif s.LY > threshold: stick_cmds.append("s")
+            if s.LX < -threshold: stick_cmds.append("a")
+            elif s.LX > threshold: stick_cmds.append("d")
+
+            # joystick ขวา สำหรับหมุน
+            if s.RX < -threshold: stick_cmds.append("q")
+            elif s.RX > threshold: stick_cmds.append("e")
+
+            # ปุ่มอื่น ๆ
+            other_cmds = []
+            if s.DpadUp: other_cmds.append("y")
+            if s.DpadDown: other_cmds.append("P")
+            if s.L1: other_cmds.append("h")
+            if s.R1: other_cmds.append("u")
+            if s.R2: other_cmds.append("o")
+            if s.cross: other_cmds.append("m")
+            if s.touchBtn: other_cmds.append("f")
+            if s.circle: other_cmds.append("c")
+
+            # รวมคำสั่ง
+            if stick_cmds:
+                new_cmd = "".join(stick_cmds)
+            elif other_cmds:
+                new_cmd = "".join(other_cmds)
+            else:
+                new_cmd = "x"  # ไม่มีปุ่มกดเลย = ปล่อยปุ่มทั้งหมด
+
+            if new_cmd != prev_cmd:
+                with self.cmd_lock:
+                    self.current_cmd = new_cmd
+                prev_cmd = new_cmd
+
+            time.sleep(0.005)
+
+    def send_command(self, command):
+        if not self.connected or command == self.last_cmd:
+            return False
+        try:
+            full_cmd = f"{command}:{self.speed_level}\n"
+            self.sock.sendall(full_cmd.encode())
+            self.last_cmd = command
+            print(f"📤 ส่ง: {full_cmd.strip()}")
+            return True
+        except Exception as e:
+            print(f"❌ ไม่สามารถส่ง: {e}")
+            self.connected = False
+            return False
+
+    def control_loop(self):
+        print("🎮 เริ่มควบคุมด้วยจอย PS5 (Ctrl+C เพื่อหยุด)")
+        reader_thread = threading.Thread(target=self.read_controller_loop, daemon=True)
+        reader_thread.start()
+
+        try:
+            while self.connected:
+                with self.cmd_lock:
+                    cmd = self.current_cmd
+                self.send_command(cmd)
+                time.sleep(0.01)
+        except KeyboardInterrupt:
+            print("\n🛑 หยุดระบบ")
+        finally:
+            self.running = False
+            reader_thread.join()
+            self.disconnect()
+
+    def disconnect(self):
+        if self.sock:
+            try:
+                self.sock.send(b"x:1\n")
+                self.sock.close()
+            except:
+                pass
+        self.dualsense.close()
+        self.connected = False
+        print("🔌 ตัดการเชื่อมต่อแล้ว")
+
+    def run(self):
+        if not self.connect_to_server():
+            return
+        self.control_loop()
+        print("👋 จบการทำงาน")
+
+if __name__ == "__main__":
+    PS5ControllerClient().run()
 
