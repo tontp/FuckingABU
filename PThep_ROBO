@@ -72,9 +72,10 @@ class PS5ControllerClient:
 
             # ปุ่มอื่น ๆ
             other_cmds = []
-            if s.DpadUp: other_cmds.append("y")
-            if s.DpadDown: other_cmds.append("P")
-            if s.L1: other_cmds.append("h")
+            if s.DpadUp: other_cmds.append("h")
+            # if s.DpadDown: other_cmds.append("P")
+            if s.L1: other_cmds.append("y")
+            if s.L2: other_cmds.append("P")
             if s.R1: other_cmds.append("u")
             if s.R2: other_cmds.append("o")
             if s.cross: other_cmds.append("m")
