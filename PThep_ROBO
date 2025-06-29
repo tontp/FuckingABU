@@ -9,7 +9,7 @@ class PS5ControllerClient:
         self.port = port
         self.sock = None
         self.connected = False
-        self.speed_level = 1
+        self.speed_level = 2
         self.last_options_state = False
         self.last_cmd = "x"
         self.current_cmd = "x"
@@ -148,4 +148,3 @@ class PS5ControllerClient:
 
 if __name__ == "__main__":
     PS5ControllerClient().run()
-
